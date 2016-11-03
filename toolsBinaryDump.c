@@ -21,60 +21,97 @@
  * 
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "toolsBinaryDump.h"
 
-typedef enum toolsApi_type
+int calBufferSize(ssize_t size, toolsDataType_t dataType, int width)
 {
-    toolsNG = -1,
-    toolsOK = 0
-} ToolsApi_t, *pToolsApi_t;
+    int aSize = -1;
 
-ToolsApi_t binaryDump(void* buffer, ssize_t size, int width);
+    if(size < 0x10000)
+    {
+        aSize += size / width * sizeof("aaaa ");
+    }else{
+        aSize += size / width * sizeof("aaaaaaaa ");
+    }
 
-#define DISP_WIDTH_MAX 16
-#define DISP_ADDR_SIZE  4
-#define DISP_DATA_SIZE  1
+    switch(dataType)
+    {
+        case dspType8:
+            aSize += size * sizeof("dd ");
+            break;
+        case dspType16:
+            aSize += (size/2) * sizeof("dddd ");
+            break;
+        case dspType32:
+            aSize += (size/4) * sizeof("dddddddd ");
+            break;
+        case dspType64:
+            aSize += (size/8) * sizeof("dddddddddddddddd ");
+            break;
+        default:
+            aSize = -1;
+            break;
+    }
+    
+    return aSize;
+}
 
-#define DISP_BUFF_MAX   4096
-
-ToolsApi_t binaryDump(void* buffer, ssize_t size, int width)
+/*
+ * 
+ * name: binaryDump API
+ * @param[in] *buffer top of the binary data.  
+ * @param[in] size    length of binary data.
+ * @param[in] width   display size of binary data.
+ * @return toolsApi_t result of function
+ * 
+ */
+toolsApi_t binaryDump(void* buffer, ssize_t size, toolsDataType_t dataType, int width)
 {
-    ToolsApi_t rc = toolsNG;
+    toolsApi_t rc = toolsOK;
     char* disp = NULL;
     unsigned int cnt = 0;
     unsigned char* src_byte = NULL;
     int dp = 0;
-
-    disp = (char *)calloc( DISP_BUFF_MAX, sizeof(char));
+    int aSize = 0;
     
-    if((buffer != NULL) && (width <= DISP_WIDTH_MAX) && (disp != NULL))
+    aSize = calBufferSize(size, dataType, width);
+    if(aSize == -1)
     {
-        src_byte = (unsigned char*)buffer;
-
-        /* add address */
-        sprintf(&disp[dp], "%04x ", cnt);
-        dp = strnlen(disp, DISP_BUFF_MAX);
-
-        for(cnt = 0; cnt < size; cnt++)
+        fprintf(stderr, "Illegal parameter error : Data type¥n");
+        rc = toolsIllegalParameterError;
+    }
+    
+    if(rc == toolsOK)
+    {
+        disp = (char *)calloc( aSize, sizeof(char));
+        
+        if((buffer != NULL) && (disp != NULL))
         {
-            sprintf(&disp[dp], "%02x ", src_byte[cnt]);
-            dp = strnlen(disp, DISP_BUFF_MAX);
-            if((cnt + 1) % width == 0)
-            {
-                /* add carriage return */
-                sprintf(&disp[dp], "\n");
-                dp = strnlen(disp, DISP_BUFF_MAX);
-                /* add address */
-                sprintf(&disp[dp], "%04x ", cnt + 1);
-                dp = strnlen(disp, DISP_BUFF_MAX);
-            }
-        }
+            src_byte = (unsigned char*)buffer;
 
-        fprintf(stderr, "%s\n", disp);
-        rc = toolsOK;
-        free(disp);
+            for(cnt = 0; cnt < size; cnt++)
+            {
+                if(cnt % width == 0)
+                {
+                    /* add address */
+                    sprintf(&disp[dp], "%04x ", cnt);
+                    dp = strnlen(disp, aSize);
+                }
+
+                sprintf(&disp[dp], "%02x ", src_byte[cnt]);
+                dp = strnlen(disp, aSize);
+                if((cnt + 1) % width == 0)
+                {
+                    /* add carriage return */
+                    sprintf(&disp[dp], "\n");
+                    dp = strnlen(disp, aSize);
+                }
+            }
+
+            fprintf(stderr, "%s\n", disp);
+            rc = toolsOK;
+            free(disp);
+        }
     }
 
     return rc;
@@ -85,8 +122,14 @@ int main(int argc, char **argv)
     unsigned char buffer[] = {  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
                                 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
                             };
+    static char readline[PATH_MAX] = {0};
 
-    ToolsApi_t rc = binaryDump(buffer, sizeof(buffer), 16);
+    /* ファイルの終端まで文字を読み取り表示する */
+    while ( fgets(readline, PATH_MAX, stdin) != NULL ) {
+        printf("%s\n", readline);
+    }
+
+    toolsApi_t rc = binaryDump(buffer, sizeof(buffer), dspType8, 16);
 
     printf("binaryDump return = %d\n", rc);
 

@@ -21,6 +21,7 @@ indent_mode=3
 name=tools
 base_path=/home/masaaki/tools
 description=
+file_patterns=
 
 [long line marker]
 long_line_behaviour=1
@@ -28,18 +29,11 @@ long_line_column=120
 
 [files]
 current_page=0
-FILE_NAME_0=2058;C;0;EUTF-8;0;1;0;%2Fhome%2Fmasaaki%2Ftools%2FtoolsBinaryDump.c;0;4
+FILE_NAME_0=1010;C;0;EUTF-8;0;1;0;%2Fhome%2Fmasaaki%2Ftools%2FtoolsBinaryDump.h;0;4
+FILE_NAME_1=3589;C;0;EUTF-8;0;1;0;%2Fhome%2Fmasaaki%2Ftools%2FtoolsBinaryDump.c;0;4
 
 [VTE]
 last_dir=/home/masaaki/tools
-
-[debugger]
-target=
-debugger=
-arguments=
-envvar_count=0
-watches_count=0
-breaks_count=0
 
 [prjorg]
 source_patterns=*.c;*.C;*.cpp;*.cxx;*.c++;*.cc;*.m;
@@ -48,3 +42,26 @@ ignored_dirs_patterns=.*;CVS;
 ignored_file_patterns=*.o;*.obj;*.a;*.lib;*.so;*.dll;*.lo;*.la;*.class;*.jar;*.pyc;*.mo;*.gmo;
 generate_tag_prefs=0
 external_dirs=
+
+[build-menu]
+EX_00_LB=_Execute
+EX_00_CM="./%e"
+EX_00_WD=
+CFT_00_LB=_Compile
+CFT_00_CM=gcc -Wall -c "%f" -g -O0
+CFT_00_WD=
+CFT_02_LB=_Lint
+CFT_02_CM=cppcheck --language=c --enable=warning,style --template=gcc "%f"
+CFT_02_WD=
+filetypes=C;
+CFT_01_LB=_Build
+CFT_01_CM=gcc -Wall -o "%e" "%f" -g -O0
+CFT_01_WD=
+
+[debugger]
+target=/home/masaaki/tools/toolsBinaryDump
+debugger=GDB
+arguments=
+envvar_count=0
+watches_count=0
+breaks_count=0
