@@ -116,20 +116,35 @@ toolsApi_t binaryDump(void* buffer, ssize_t size, toolsDataType_t dataType, int 
 
     return rc;
 }
-// #define TestData_EN 
+
+int getFileState(FILE *fp)
+{
+    int rc = 0;
+    struct stat statBuf;
+
+    fstat(fileno(fp), &statBuf);
+
+    /* check mode(symbolic link and directory) */
+    if((statBuf.st_mode & S_IFREG) != 0)
+    {
+        /* check mode(symbolic link and directory) */
+        if((statBuf.st_mode & S_IFLNK) != S_IFLNK)
+        {
+            rc = statBuf.st_size;
+        }else{
+            fprintf(stderr, "binaryDump symbolic link (mode:%x)\n", statBuf.st_mode);
+        }
+    }else{
+        fprintf(stderr, "binaryDump Not regular file (mode:%x)\n", statBuf.st_mode);
+    }
+
+    return rc;
+}
+
 int main(int argc, char **argv)
 {
-#ifdef TestData_EN
-    unsigned char buffer[] = {  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-                                0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
-                            };
-#else
     unsigned char* buffer = NULL;
-    
-#endif // ifdef TestData_EN
-
     static char readline[PATH_MAX] = {0};
-    struct stat statBuf;
     FILE *fp = NULL;
     char *fnp = NULL;
     int length = 0;
@@ -144,24 +159,29 @@ int main(int argc, char **argv)
             fp = fopen(readline, "r");
             if(fp != NULL)
             {
-                fstat(fileno(fp), &statBuf );
-                length = statBuf.st_size;
-                buffer = (unsigned char *)calloc(sizeof(char), length);
-     
-                if(fread(buffer, sizeof(char), length, fp) > 0)
+                if((length = getFileState(fp)) != 0)
                 {
-                    toolsApi_t rc = binaryDump(buffer, length, dspType8, 16);
-                    if(rc != toolsOK)
+                    buffer = (unsigned char *)calloc(sizeof(char), length);
+                    if(buffer != NULL)
                     {
-                        fprintf(stderr, "binaryDump error = %d\n", rc);
+                        if(fread(buffer, sizeof(char), length, fp) > 0)
+                        {
+                            toolsApi_t rc = binaryDump(buffer, length, dspType8, 16);
+                            if(rc != toolsOK)
+                            {
+                                fprintf(stderr, "binaryDump error = %d\n", rc);
+                            }
+                        }
+                        else
+                        {
+                            fprintf(stderr, "binaryDump file read error\n");
+                        }
+                        free(buffer);
+                    }else{
+                        fprintf(stderr, "binaryDump memory allocation error(%d)\n", errno);
                     }
                 }
-                else
-                {
-                    fprintf(stderr, "binaryDump file read error\n");
-                }
                 fclose(fp);
-                
             }else{
                 fprintf(stderr, "binaryDump file open error(%d)\n", errno);
             }
