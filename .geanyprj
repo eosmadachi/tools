@@ -1,7 +1,0 @@
-[project]
-name=tools
-description=
-base_path=./
-run_cmd=
-regenerate=true
-type=C

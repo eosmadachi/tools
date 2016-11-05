@@ -29,6 +29,8 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <limits.h>
+#include <sys/stat.h>
+#include <errno.h>
 
 /* enum */
 typedef enum toolsApi

@@ -108,7 +108,7 @@ toolsApi_t binaryDump(void* buffer, ssize_t size, toolsDataType_t dataType, int 
                 }
             }
 
-            fprintf(stderr, "%s\n", disp);
+            fprintf(stdout, "%s\n", disp);
             rc = toolsOK;
             free(disp);
         }
@@ -116,22 +116,59 @@ toolsApi_t binaryDump(void* buffer, ssize_t size, toolsDataType_t dataType, int 
 
     return rc;
 }
-
+// #define TestData_EN 
 int main(int argc, char **argv)
 {
+#ifdef TestData_EN
     unsigned char buffer[] = {  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
                                 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
                             };
+#else
+    unsigned char* buffer = NULL;
+    
+#endif // ifdef TestData_EN
+
     static char readline[PATH_MAX] = {0};
+    struct stat statBuf;
+    FILE *fp = NULL;
+    char *fnp = NULL;
+    int length = 0;
 
-    /* ファイルの終端まで文字を読み取り表示する */
-    while ( fgets(readline, PATH_MAX, stdin) != NULL ) {
-        printf("%s\n", readline);
+    while (fgets(readline, PATH_MAX, stdin) != NULL)
+    {
+        fnp = strchr(readline, '\n');
+        if(fnp != NULL)
+        {
+            *fnp = '\0';
+            fprintf(stdout, "File Name: %s\n", readline);
+            fp = fopen(readline, "r");
+            if(fp != NULL)
+            {
+                fstat(fileno(fp), &statBuf );
+                length = statBuf.st_size;
+                buffer = (unsigned char *)calloc(sizeof(char), length);
+     
+                if(fread(buffer, sizeof(char), length, fp) > 0)
+                {
+                    toolsApi_t rc = binaryDump(buffer, length, dspType8, 16);
+                    if(rc != toolsOK)
+                    {
+                        fprintf(stderr, "binaryDump error = %d\n", rc);
+                    }
+                }
+                else
+                {
+                    fprintf(stderr, "binaryDump file read error\n");
+                }
+                fclose(fp);
+                
+            }else{
+                fprintf(stderr, "binaryDump file open error(%d)\n", errno);
+            }
+        }else{
+            fprintf(stderr, "binaryDump Illegal filename error\n");
+        }
     }
-
-    toolsApi_t rc = binaryDump(buffer, sizeof(buffer), dspType8, 16);
-
-    printf("binaryDump return = %d\n", rc);
 
     return 0;
 }
