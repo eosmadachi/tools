@@ -35,7 +35,8 @@
 /* enum */
 typedef enum toolsApi
 {
-    toolsIllegalParameterError = -2,
+    toolsIllegalParameterError = -3,
+    toolsIllegalArgumentError = -2,
     toolsNG = -1,
     toolsOK = 0
 } toolsApi_t, *p_toolsApi_t;
@@ -49,11 +50,18 @@ typedef enum toolsDataType
     dspType64
 } toolsDataType_t, *p_toolsDataType_t;
 
+typedef struct toolsData
+{
+    toolsDataType_t type;
+    int             width;
+    int             title;
+} toolsData_t, *p_toolsData_t;
+
 /* definition */
 
 
 /* prototype */
-toolsApi_t binaryDump(void* buffer, ssize_t size, toolsDataType_t dataType, int width);
+toolsApi_t binaryDump(void* buffer, ssize_t size, p_toolsData_t tDate);
 
 
 #endif /* #ifndef __TOOLS_BINARY_DUMP_H__ */

@@ -23,6 +23,53 @@
 
 #include "toolsBinaryDump.h"
 
+void createTitle(char *title, int tsize, int size, toolsDataType_t dataType, int width)
+{
+    char dataFmt[] = {"+%02x "};
+    int i = 0, len = 0, inc = 0;
+    
+    if(size < 0x10000)
+    {
+        sprintf(title, "addr");
+    }else{
+        sprintf(title, "  addr  ");
+    }
+    len = strnlen(title, tsize);
+
+    switch(dataType)
+    {
+        case dspType8:
+            strcpy(dataFmt, " %02x");  
+            inc = 1;
+            break;
+        case dspType16:
+            strcpy(dataFmt, "  %02x");
+            inc = 2;
+            break;
+        case dspType32:
+            strcpy(dataFmt, "    %2x  ");
+            inc = 4;
+            break;
+        case dspType64:
+            strcpy(dataFmt, "      %2x    ");
+            inc = 8;
+            break;
+        default:
+            strcpy(dataFmt, " %02x");
+            inc = 1;
+            break;
+    }
+
+    for(i = 0; i < width; i += inc)
+    {
+        sprintf(&title[len], dataFmt, i);
+        len = strnlen(title, tsize);
+    }
+    sprintf(&title[len], "\n");
+    len = strnlen(title, tsize);
+    memset(&title[len], '-', len-1);
+}
+
 int calBufferSize(ssize_t size, toolsDataType_t dataType, int width)
 {
     int aSize = -1;
@@ -65,42 +112,49 @@ int calBufferSize(ssize_t size, toolsDataType_t dataType, int width)
  * @return toolsApi_t result of function
  * 
  */
-toolsApi_t binaryDump(void* buffer, ssize_t size, toolsDataType_t dataType, int width)
+toolsApi_t binaryDump(void* buffer, ssize_t size, p_toolsData_t tData)
 {
     toolsApi_t rc = toolsOK;
     char* disp = NULL;
     unsigned int cnt = 0;
-    unsigned char* src_byte = NULL;
+    unsigned char* srcByte = NULL;
     int dp = 0;
     int aSize = 0;
+    char title[240] = {0};
     
-    aSize = calBufferSize(size, dataType, width);
+    aSize = calBufferSize(size, tData->type, tData->width);
     if(aSize == -1)
     {
         fprintf(stderr, "Illegal parameter error : Data type¥n");
         rc = toolsIllegalParameterError;
     }
     
+    if(tData->title > 0)
+    {
+        createTitle(title, sizeof(title), size, tData->type, tData->width);
+        fprintf(stdout, "%s\n", title);
+    }
+
     if(rc == toolsOK)
     {
         disp = (char *)calloc( aSize, sizeof(char));
         
         if((buffer != NULL) && (disp != NULL))
         {
-            src_byte = (unsigned char*)buffer;
+            srcByte = (unsigned char*)buffer;
 
             for(cnt = 0; cnt < size; cnt++)
             {
-                if(cnt % width == 0)
+                if(cnt % tData->width == 0)
                 {
                     /* add address */
                     sprintf(&disp[dp], "%04x ", cnt);
                     dp = strnlen(disp, aSize);
                 }
 
-                sprintf(&disp[dp], "%02x ", src_byte[cnt]);
+                sprintf(&disp[dp], "%02x ", srcByte[cnt]);
                 dp = strnlen(disp, aSize);
-                if((cnt + 1) % width == 0)
+                if((cnt + 1) % tData->width == 0)
                 {
                     /* add carriage return */
                     sprintf(&disp[dp], "\n");
@@ -132,12 +186,65 @@ int getFileState(FILE *fp)
         {
             rc = statBuf.st_size;
         }else{
-            fprintf(stderr, "binaryDump symbolic link (mode:%x)\n", statBuf.st_mode);
+            fprintf(stderr, "Symbolic link (mode:%x)\n", statBuf.st_mode);
         }
     }else{
-        fprintf(stderr, "binaryDump Not regular file (mode:%x)\n", statBuf.st_mode);
+        fprintf(stderr, "Not regular file (mode:%x)\n", statBuf.st_mode);
     }
 
+    return rc;
+}
+
+int argumentParsing(int argc, char **argv, toolsData_t *tData)
+{
+    int rc = toolsOK;
+    int result;
+
+    while((result=getopt(argc, argv, "t::w:s:")) != -1)
+    {
+        switch(result)
+        {
+        /* If option of argument has the value, the value is stored to "optarg" */
+        case 's':   /* data word size */
+            switch(strtol(optarg, NULL, 0))
+            {
+                case 8: tData->type  = dspType8;  break;
+                case 16: tData->type = dspType16; break;
+                case 32: tData->type = dspType32; break;
+                case 64: tData->type = dspType64; break;
+                default:
+                    rc = toolsIllegalArgumentError;
+                    fprintf(stdout, "There is illegal option parameter. (option s: %s)\n", optarg);
+                    break;
+            }
+            break;
+        case 't':   /* title */
+            if(optarg != NULL)
+            {
+                tData->title = strtol(optarg, NULL, 0);
+            }
+            break;
+
+        case 'w':   /* display line size */
+            tData->width = strtol(optarg, NULL, 0);
+            if(tData->width < 1 || tData->width > 256)
+            {
+                rc = toolsIllegalArgumentError;
+                fprintf(stdout, "There is illegal option parameter. (option w: %s)\n", optarg);
+            }
+            break;
+        case '?':
+            /* If there is not value that is specified on the getopt, result is "?" */
+            fprintf(stdout, "There is illegal option on the command line.\n");
+            break;
+        }
+    }
+
+    /* getoptはoptindに「次に処理すべき引数のインデクスを格納している. */
+    /* ここではoptindを使用してオプションの値ではない値を処理する. */
+    for(; optind < argc; optind++)
+        fprintf(stdout, "%s \n", argv[optind]);
+  
     return rc;
 }
 
@@ -148,6 +255,17 @@ int main(int argc, char **argv)
     FILE *fp = NULL;
     char *fnp = NULL;
     int length = 0;
+    int rc = 0;
+    toolsData_t tData = {0};
+
+    tData.width = 16;
+    tData.title = 1;
+    tData.type = dspType8;
+    rc = argumentParsing(argc, argv, &tData);
+    if(rc != toolsOK)
+    {
+        return rc;
+    }
 
     while (fgets(readline, PATH_MAX, stdin) != NULL)
     {
@@ -155,38 +273,37 @@ int main(int argc, char **argv)
         if(fnp != NULL)
         {
             *fnp = '\0';
-            fprintf(stdout, "File Name: %s\n", readline);
-            fp = fopen(readline, "r");
-            if(fp != NULL)
+        }
+
+        fprintf(stdout, "File Name: %s\n", readline);
+        fp = fopen(readline, "r");
+        if(fp != NULL)
+        {
+            if((length = getFileState(fp)) != 0)
             {
-                if((length = getFileState(fp)) != 0)
+                buffer = (unsigned char *)calloc(sizeof(char), length);
+                if(buffer != NULL)
                 {
-                    buffer = (unsigned char *)calloc(sizeof(char), length);
-                    if(buffer != NULL)
+                    if(fread(buffer, sizeof(char), length, fp) > 0)
                     {
-                        if(fread(buffer, sizeof(char), length, fp) > 0)
+                        toolsApi_t rc = binaryDump(buffer, length, &tData);
+                        if(rc != toolsOK)
                         {
-                            toolsApi_t rc = binaryDump(buffer, length, dspType8, 16);
-                            if(rc != toolsOK)
-                            {
-                                fprintf(stderr, "binaryDump error = %d\n", rc);
-                            }
+                            fprintf(stderr, "Dump error = %d\n", rc);
                         }
-                        else
-                        {
-                            fprintf(stderr, "binaryDump file read error\n");
-                        }
-                        free(buffer);
-                    }else{
-                        fprintf(stderr, "binaryDump memory allocation error(%d)\n", errno);
                     }
+                    else
+                    {
+                        fprintf(stderr, "File read error\n");
+                    }
+                    free(buffer);
+                }else{
+                    fprintf(stderr, "Memory allocation error(%d)\n", errno);
                 }
-                fclose(fp);
-            }else{
-                fprintf(stderr, "binaryDump file open error(%d)\n", errno);
             }
+            fclose(fp);
         }else{
-            fprintf(stderr, "binaryDump Illegal filename error\n");
+            fprintf(stderr, "File open error(%d)\n", errno);
         }
     }
 
