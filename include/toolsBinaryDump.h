@@ -55,6 +55,7 @@ typedef struct toolsData
     toolsDataType_t type;
     int             width;
     int             title;
+    char            *file;
 } toolsData_t, *p_toolsData_t;
 
 /* definition */

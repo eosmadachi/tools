@@ -233,6 +233,7 @@ int argumentParsing(int argc, char **argv, toolsData_t *tData)
                 fprintf(stdout, "There is illegal option parameter. (option w: %s)\n", optarg);
             }
             break;
+
         case '?':
             /* If there is not value that is specified on the getopt, result is "?" */
             fprintf(stdout, "There is illegal option on the command line.\n");
@@ -240,73 +241,90 @@ int argumentParsing(int argc, char **argv, toolsData_t *tData)
         }
     }
 
-    /* getoptはoptindに「次に処理すべき引数のインデクスを格納している. */
-    /* ここではoptindを使用してオプションの値ではない値を処理する. */
+    /* Handle argument without option */
     for(; optind < argc; optind++)
-        fprintf(stdout, "%s \n", argv[optind]);
+    {
+        tData->file = argv[optind];
+        break;
+    }
   
     return rc;
 }
 
-int main(int argc, char **argv)
+toolsApi_t binaryDumpLoop(char *fileName, p_toolsData_t tData)
 {
+    char *fnp   = NULL;
+    FILE *fp    = NULL;
+    int length  = 0;
     unsigned char* buffer = NULL;
-    static char readline[PATH_MAX] = {0};
-    FILE *fp = NULL;
-    char *fnp = NULL;
-    int length = 0;
-    int rc = 0;
+    toolsApi_t rc = toolsOK;
+
+    fnp = strchr(fileName, '\n');
+    if(fnp != NULL)
+    {
+        *fnp = '\0';
+    }
+
+    fprintf(stdout, "<< File Name: %s >>\n", fileName);
+    fp = fopen(fileName, "r");
+    if(fp != NULL)
+    {
+        if((length = getFileState(fp)) != 0)
+        {
+            buffer = (unsigned char *)calloc(sizeof(char), length);
+            if(buffer != NULL)
+            {
+                if(fread(buffer, sizeof(char), length, fp) > 0)
+                {
+                    if((rc = binaryDump(buffer, length, tData)) != toolsOK)
+                    {
+                        fprintf(stderr, "Dump error = %d\n", rc);
+                    }
+                }
+                else
+                {
+                    fprintf(stderr, "File read error\n");
+                }
+                free(buffer);
+            }else{
+                fprintf(stderr, "Memory allocation error(%d)\n", errno);
+            }
+        }
+        fclose(fp);
+    }else{
+        fprintf(stderr, "File open error(%d)\n", errno);
+    }
+    
+    return rc;
+}
+
+int main(int argc, char *argv[])
+{
     toolsData_t tData = {0};
+    char readline[PATH_MAX] = {0};
+    int rc = 0;
 
     tData.width = 16;
     tData.title = 1;
     tData.type = dspType8;
     rc = argumentParsing(argc, argv, &tData);
-    if(rc != toolsOK)
+    if(rc == toolsOK)
     {
-        return rc;
-    }
-
-    while (fgets(readline, PATH_MAX, stdin) != NULL)
-    {
-        fnp = strchr(readline, '\n');
-        if(fnp != NULL)
+        if(tData.file == NULL)
         {
-            *fnp = '\0';
-        }
-
-        fprintf(stdout, "File Name: %s\n", readline);
-        fp = fopen(readline, "r");
-        if(fp != NULL)
-        {
-            if((length = getFileState(fp)) != 0)
+            while(fgets(readline, PATH_MAX, stdin) != NULL)
             {
-                buffer = (unsigned char *)calloc(sizeof(char), length);
-                if(buffer != NULL)
+                rc = binaryDumpLoop(readline, &tData);
+                if(rc != toolsOK)
                 {
-                    if(fread(buffer, sizeof(char), length, fp) > 0)
-                    {
-                        toolsApi_t rc = binaryDump(buffer, length, &tData);
-                        if(rc != toolsOK)
-                        {
-                            fprintf(stderr, "Dump error = %d\n", rc);
-                        }
-                    }
-                    else
-                    {
-                        fprintf(stderr, "File read error\n");
-                    }
-                    free(buffer);
-                }else{
-                    fprintf(stderr, "Memory allocation error(%d)\n", errno);
+                    break;
                 }
             }
-            fclose(fp);
         }else{
-            fprintf(stderr, "File open error(%d)\n", errno);
+            rc = binaryDumpLoop(tData.file, &tData);
         }
     }
 
-    return 0;
+    return rc;
 }
 
