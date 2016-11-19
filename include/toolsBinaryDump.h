@@ -31,10 +31,12 @@
 #include <limits.h>
 #include <sys/stat.h>
 #include <errno.h>
+#include <inttypes.h>
 
 /* enum */
 typedef enum toolsApi
 {
+    toolsGetResourceError = -4,
     toolsIllegalParameterError = -3,
     toolsIllegalArgumentError = -2,
     toolsNG = -1,
@@ -52,6 +54,10 @@ typedef enum toolsDataType
 
 typedef struct toolsData
 {
+    uint8_t         *buffer;
+    int             size;
+    int             dataSize;
+    int             lineSize;
     toolsDataType_t type;
     int             width;
     int             title;
@@ -59,10 +65,14 @@ typedef struct toolsData
 } toolsData_t, *p_toolsData_t;
 
 /* definition */
-
+#define OFFSET_FMT_08    " %02x"                // SP+dd
+#define OFFSET_FMT_16    "  %02x "              // SP+_dd_
+#define OFFSET_FMT_32    "    %02x   "          // SP+___dd___
+#define OFFSET_FMT_64    "        %02x       "  // SP+_______dd_______
+#define OFFSET_DISP_SIZE    strlen()
 
 /* prototype */
-toolsApi_t binaryDump(void* buffer, ssize_t size, p_toolsData_t tDate);
+toolsApi_t binaryDump(p_toolsData_t tDate);
 
 
 #endif /* #ifndef __TOOLS_BINARY_DUMP_H__ */
