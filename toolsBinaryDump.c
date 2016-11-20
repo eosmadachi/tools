@@ -272,9 +272,13 @@ int getFileState(FILE *fp)
             rc = statBuf.st_size;
         }else{
             fprintf(stderr, "Symbolic link (mode:%x)\n", statBuf.st_mode);
+            fprintf(stderr, "\n");
+            fprintf(stderr, "\n");
         }
     }else{
         fprintf(stderr, "Not regular file (mode:%x)\n", statBuf.st_mode);
+        fprintf(stderr, "\n");
+        fprintf(stderr, "\n");
     }
 
     return rc;
