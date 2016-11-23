@@ -1,5 +1,5 @@
 /*
- * binaryDump.c
+ * dataDump.c
  * 
  * Copyright 2016 Masaaki Adachi <web.adachi@gmail.com>
  * 
@@ -21,18 +21,18 @@
  * 
  */
 
-#include "toolsBinaryDump.h"
+#include "toolsDataDump.h"
 
-void createTitle(char *title, int tsize, int size, toolsDataType_t dataType, int width)
+void createTitle(char *title, char *strFile, int tsize, int size, toolsDataType_t dataType, int width)
 {
     char dataFmt[24] = {0};
     int i = 0, len = 0, inc = 0;
     
     if(size < 0x10000)
     {
-        sprintf(title, "addr");
+        sprintf(title, "%saddr: ", strFile);
     }else{
-        sprintf(title, "  addr  ");
+        sprintf(title, "%s  addr  : ", strFile);
     }
     len = strnlen(title, tsize);
 
@@ -66,8 +66,9 @@ void createTitle(char *title, int tsize, int size, toolsDataType_t dataType, int
         len = strnlen(title, tsize);
     }
     sprintf(&title[len], "\n");
+
     len = strnlen(title, tsize);
-    memset(&title[len], '-', len-1);
+    memset(&title[len], '-', len - 1);
 }
 
 int calBufferSize(p_toolsData_t tData)
@@ -83,9 +84,9 @@ int calBufferSize(p_toolsData_t tData)
     /* calculate address buffer size (include CR) */
     if(tData->size < 0x10000)
     {
-        titleSize = strlen("aaaa ") + strlen("¥n");
+        titleSize = strlen("aaaa: ") + strlen("¥n");
     }else{
-        titleSize = strlen("aaaaaaaa ") + strlen("¥n");
+        titleSize = strlen("aaaaaaaa: ") + strlen("¥n");
     }
     aSize = lineCnt * titleSize;
 
@@ -172,20 +173,13 @@ void setFormatData(p_toolsData_t tData, char *disp, int dp, int *cnt)
     }
 }
 
-/*
- * 
- * name: binaryDump API
- * @param[in] *buffer top of the binary data.  
- * @param[in] size    length of binary data.
- * @param[in] width   display size of binary data.
- * @return toolsApi_t result of function
- * 
- */
-toolsApi_t binaryDump(p_toolsData_t tData)
+toolsApi_t dataDump(p_toolsData_t tData)
 {
+    static char fname[PATH_MAX] = "";
     toolsApi_t rc = toolsOK;
     char *disp = NULL;
     int cnt = 0;
+    int lineCnt = 0;
     int dp = 0;
     int aSize = 0;
     char *title = NULL;
@@ -196,19 +190,22 @@ toolsApi_t binaryDump(p_toolsData_t tData)
         fprintf(stderr, "Illegal parameter error : Data type¥n");
         rc = toolsIllegalParameterError;
     }
-    
+    /* insert file name */
+    if(tData->insertFName)
+    {
+        sprintf(fname, "%s: ", tData->file);
+    }
+
     if(rc == toolsOK)
     {
         /* display offset title */
-        title = (char *)calloc(tData->lineSize, 2);
+        title = (char *)calloc(strlen(fname) + tData->lineSize, 2); /* offset + "-" */
         if(title != NULL)
         {
-            if(tData->title > 0)
+            if((tData->title > 0) || (tData->title == OFFSET_ONLY_TOP))
             {        
-                createTitle(title, tData->lineSize * 2, tData->size, tData->type, tData->width);
-                fprintf(stdout, "%s\n", title);
+                createTitle(title, fname, tData->lineSize * 2, tData->size, tData->type, tData->width);
             }
-            free(title);
         }else{
             rc = toolsGetResourceError;
         }
@@ -216,37 +213,56 @@ toolsApi_t binaryDump(p_toolsData_t tData)
 
     if(rc == toolsOK)
     {
-        /* display data */
-        disp = (char *)calloc( aSize+8, sizeof(char));
+        /* allocate line buffer */
+        disp = (char *)calloc( tData->lineSize, sizeof(char));
         if(disp != NULL)
         {
             cnt = 0;
+            if(tData->title == OFFSET_ONLY_TOP)
+            {
+                fprintf(stdout, "%s\n", title);
+            }
+
             while(cnt < tData->dataSize)
             {
                 if(cnt % tData->width == 0)
                 {
+                    dp = 0;         /* clear of append pointer */
+                    /* title display */
+                    if(tData->title > 0)
+                    {
+                        if((lineCnt % tData->title == 0) && (cnt < tData->dataSize))
+                        {
+                            fprintf(stdout, "\n%s\n", title);
+                        } 
+                    }
+
                     /* add address */
                     if(tData->size < 0x10000)
                     {
-                        sprintf(&disp[dp], "%04x ", cnt);
+                        sprintf(&disp[dp], "%04x: ", cnt);
                     }else{
-                        sprintf(&disp[dp], "%08x ", cnt);
+                        sprintf(&disp[dp], "%08x: ", cnt);
                     }
                     dp = strnlen(disp, aSize);
                 }
 
+                /* add data */
                 setFormatData(tData, disp, dp, &cnt);
                 dp = strnlen(disp, aSize);
 
-                if((cnt % tData->width == 0) && (cnt != tData->size))
+                if((cnt % tData->width == 0) && (cnt <= tData->dataSize))
                 {
                     /* add carriage return */
                     sprintf(&disp[dp], "\n");
-                    dp = strnlen(disp, aSize);
+                    /* display line  */
+                    fprintf(stdout, "%s%s", fname, disp);
+
+                    /* inclement line count */
+                    lineCnt++;
                 }
             }
-
-            fprintf(stdout, "%s\n", disp);
+            free(title);
             free(disp);
         }
 
@@ -289,12 +305,12 @@ int argumentParsing(int argc, char **argv, toolsData_t *tData)
     int rc = toolsOK;
     int result;
 
-    while((result=getopt(argc, argv, "ht::w:s:")) != -1)
+    while((result=getopt(argc, argv, "fht::w:d:")) != -1)
     {
         switch(result)
         {
         /* If option of argument has the value, the value is stored to "optarg" */
-        case 's':   /* data word size */
+        case 'd':   /* data word size */
             switch(strtol(optarg, NULL, 0))
             {
                 case 8: tData->type  = dspType8;  break;
@@ -323,10 +339,13 @@ int argumentParsing(int argc, char **argv, toolsData_t *tData)
             }
             break;
 
+        case 'f':
+            tData->insertFName = 1;
+            break;
         case 'h':
             fprintf(stdout, "Binary Dump Tool \n");
-            fprintf(stdout, "usage: toolsBinaryDump [-s data type] [-w line width ] [-t offset title] [file ] \n");
-            fprintf(stdout, "       -s data type         -s8:8bit -s16:16bit -s32:32bit -s64:64bit \n");
+            fprintf(stdout, "usage: toolsdataDump [-d data type] [-w line width ] [-t offset title] [file ] \n");
+            fprintf(stdout, "       -d data type         -s8:8bit -s16:16bit -s32:32bit -s64:64bit \n");
             fprintf(stdout, "       -w line width        byte size for line width\n");
             fprintf(stdout, "       -t offset title      display an offset title -t0:no title\n");
             rc = toolsNG;
@@ -352,7 +371,7 @@ int argumentParsing(int argc, char **argv, toolsData_t *tData)
     return rc; 
 }
 
-toolsApi_t binaryDumpLoop(p_toolsData_t tData)
+toolsApi_t getDataAndDump(p_toolsData_t tData)
 {
     char *fnp   = NULL;
     FILE *fp    = NULL;
@@ -375,7 +394,7 @@ toolsApi_t binaryDumpLoop(p_toolsData_t tData)
             {
                 if(fread(tData->buffer, sizeof(char), tData->size, fp) > 0)
                 {
-                    if((rc = binaryDump(tData)) != toolsOK)
+                    if((rc = dataDump(tData)) != toolsOK)
                     {
                         fprintf(stderr, "Dump error = %d\n", rc);
                     }
@@ -404,24 +423,27 @@ int main(int argc, char *argv[])
     int rc = 0;
 
     tData.width = 16;
-    tData.title = 1;
+    tData.title = -1;
+    tData.insertFName = 0;
     tData.type = dspType8;
     rc = argumentParsing(argc, argv, &tData);
     if(rc == toolsOK)
     {
         if(tData.file == NULL)
         {
+            /* for multi files */
             tData.file = readline;
             while(fgets(tData.file, PATH_MAX, stdin) != NULL)
             {
-                rc = binaryDumpLoop(&tData);
+                rc = getDataAndDump(&tData);
                 if(rc != toolsOK)
                 {
                     break;
                 }
             }
         }else{
-            rc = binaryDumpLoop(&tData);
+            /* for single file  */
+            rc = getDataAndDump(&tData);
         }
     }
 

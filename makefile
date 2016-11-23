@@ -1,10 +1,10 @@
-PRG    = toolsBinaryDump
+PRG    = toolsDataDump
 INC    = include
 
 CFLAGS = -g -Wall -I $(INC)
 CC     = gcc $(CFLAGS)
 LFLAGS = -lm
-OBJ    = toolsBinaryDump.o
+OBJ    = toolsDataDump.o
 
 
 $(PRG) : $(OBJ)

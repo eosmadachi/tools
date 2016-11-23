@@ -32,6 +32,7 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <inttypes.h>
+#include <limits.h>
 
 /* enum */
 typedef enum toolsApi
@@ -62,14 +63,16 @@ typedef struct toolsData
     int             width;
     int             title;
     char            *file;
+    int             insertFName;
 } toolsData_t, *p_toolsData_t;
 
 /* definition */
-#define OFFSET_FMT_08    " %02x"                // SP+dd
-#define OFFSET_FMT_16    "  %02x "              // SP+_dd_
-#define OFFSET_FMT_32    "    %02x   "          // SP+___dd___
-#define OFFSET_FMT_64    "        %02x       "  // SP+_______dd_______
-#define OFFSET_DISP_SIZE    strlen()
+#define OFFSET_FMT_08    "%02x "                // dd + sp
+#define OFFSET_FMT_16    " %02x  "              // _dd_ + sp
+#define OFFSET_FMT_32    "   %02x    "          // ___dd___ + sp
+#define OFFSET_FMT_64    "       %02x        "  // _______dd_______ + sp
+
+#define OFFSET_ONLY_TOP     -1
 
 /* prototype */
 toolsApi_t binaryDump(p_toolsData_t tDate);
