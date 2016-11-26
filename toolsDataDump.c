@@ -300,7 +300,37 @@ int getFileState(FILE *fp)
     return rc;
 }
 
-int argumentParsing(int argc, char **argv, toolsData_t *tData)
+void checkCommandOption(toolsData_t *tData, toolsApi_t *rc)
+{
+    int checkCode = 1;
+    
+    *rc = toolsOK;
+
+    /* check width size */
+    switch(tData->type)
+    {
+        case dspType8:
+            checkCode = 1;
+            break;
+        case dspType16:
+            checkCode = 2;
+            break;
+        case dspType32:
+            checkCode = 4;
+            break;
+        case dspType64:
+            checkCode = 8;
+            break;
+    }
+
+    if(tData->width % checkCode != 0)
+    {
+        *rc = toolsIllegalArgumentError;
+        fprintf(stdout, "There is illegal option parameter. (option w)\n");
+    }
+}
+
+toolsApi_t argumentParsing(int argc, char **argv, toolsData_t *tData)
 {
     int rc = toolsOK;
     int result;
@@ -329,7 +359,6 @@ int argumentParsing(int argc, char **argv, toolsData_t *tData)
                 tData->title = strtol(optarg, NULL, 0);
             }
             break;
-
         case 'w':   /* display line size */
             tData->width = strtol(optarg, NULL, 0);
             if(tData->width < 1 || tData->width > 256)
@@ -338,19 +367,19 @@ int argumentParsing(int argc, char **argv, toolsData_t *tData)
                 fprintf(stdout, "There is illegal option parameter. (option w: %s)\n", optarg);
             }
             break;
-
         case 'f':
             tData->insertFName = 1;
             break;
         case 'h':
-            fprintf(stdout, "Binary Dump Tool \n");
-            fprintf(stdout, "usage: toolsdataDump [-d data type] [-w line width ] [-t offset title] [file ] \n");
-            fprintf(stdout, "       -d data type         -s8:8bit -s16:16bit -s32:32bit -s64:64bit \n");
-            fprintf(stdout, "       -w line width        byte size for line width\n");
-            fprintf(stdout, "       -t offset title      display an offset title -t0:no title\n");
+            fprintf(stdout, "Data Dump \n");
+            fprintf(stdout, "usage: toolsDataDump [file] [-d data type] [-w line width ] [-t offset title] [-f display file name ] \n");
+            fprintf(stdout, "       -d data type (-s8:8bit -s16:16bit -s32:32bit -s64:64bit)\n");
+            fprintf(stdout, "       -w byte size for line width\n");
+            fprintf(stdout, "       -t display offset (-t0:no display, -t1:display to every lines)\n");
+            fprintf(stdout, "       -f display file name to top of every lines \n");
+            fprintf(stdout, "\n");
             rc = toolsNG;
             break;
-
         case '?':
             /* If there is not value that is specified on the getopt, result is "?" */
             fprintf(stdout, "There is illegal option on the command line.\n");
@@ -366,6 +395,11 @@ int argumentParsing(int argc, char **argv, toolsData_t *tData)
             tData->file = argv[optind];
             break;
         }
+    }
+    if(rc == toolsOK)
+    {
+        /* Check the command line option */
+        checkCommandOption(tData, &rc);
     }
   
     return rc; 

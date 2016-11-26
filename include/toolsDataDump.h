@@ -46,8 +46,7 @@ typedef enum toolsApi
 
 typedef enum toolsDataType
 {
-    dspTypeNone=0,
-    dspType8,
+    dspType8 = 0,
     dspType16,
     dspType32,
     dspType64
