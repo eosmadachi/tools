@@ -54,6 +54,10 @@ void createTitle(char *title, char *strFile, int tsize, int size, toolsDataType_
             strcpy(dataFmt, OFFSET_FMT_64); // _______00_______
             inc = 8;
             break;
+        case dspTypeChar:
+            strcpy(dataFmt, OFFSET_FMT_CHAR); // _00
+            inc = 1;
+            break;
         default:
             strcpy(dataFmt, OFFSET_FMT_08);
             inc = 1;
@@ -98,19 +102,23 @@ int calBufferSize(p_toolsData_t tData)
     {
         case dspType8:
             wordSize = strlen("dd ");
-            aSize += tData->dataSize * wordSize;
+            aSize += (tData->dataSize / sizeof(uint8_t)) * wordSize;
             break;
         case dspType16:
             wordSize = strlen("dddd ");
-            aSize += (tData->dataSize / 2) * wordSize;
+            aSize += (tData->dataSize / sizeof(uint16_t)) * wordSize;
             break;
         case dspType32:
             wordSize = strlen("dddddddd ");
-            aSize += (tData->dataSize / 4) * wordSize;
+            aSize += (tData->dataSize / sizeof(uint32_t)) * wordSize;
             break;
         case dspType64:
             wordSize = strlen("dddddddddddddddd ");
-            aSize += (tData->dataSize / 8) * wordSize;
+            aSize += (tData->dataSize / sizeof(uint64_t)) * wordSize;
+            break;
+        case dspTypeChar:
+            wordSize = strlen("ccc ");
+            aSize += (tData->dataSize / sizeof(uint8_t)) * wordSize;
             break;
         default:
             aSize = -1;
@@ -121,18 +129,46 @@ int calBufferSize(p_toolsData_t tData)
     return aSize;
 }
 
+void displayCharacter(char *display, char cData)
+{
+    const char *displayCharTable[] = { 
+        "NUL", "SOH", "STX", "ETX", "EOT", "ENQ", "ACK", "BEL",
+         "BS",  "HT",  "NL",  "VT",  "NP",  "CR",  "SO",  "SI",
+        "DLE", "DC1", "DC2", "DC3", "DC4", "NAK", "SYN", "ETB",
+        "CAN",  "EM", "SUB", "ESC",  "FS",  "GS",  "RS",  "US",
+         "SP",   "!",  "\"",   "#",   "$",   "%",   "&",  "\'",
+          "(",   ")",   "*",   "+",   ",",   "-",   ".",   "/",
+          "0",   "1",   "2",   "3",   "4",   "5",   "6",   "7",
+          "8",   "9",   ":",   ";",   "<",   "=",   ">",   "?",
+          "@",   "A",   "B",   "C",   "D",   "E",   "F",   "G",
+          "H",   "I",   "J",   "K",   "L",   "M",   "N",   "O",
+          "P",   "Q",   "R",   "S",   "T",   "U",   "V",   "W",
+          "X",   "Y",   "Z",   "[",  "\\",   "]",   "^",   "_",
+          "`",   "a",   "b",   "c",   "d",   "e",   "f",   "g",
+          "h",   "i",   "j",   "k",   "l",   "m",   "n",   "o",
+          "p",   "q",   "r",   "s",   "t",   "u",   "v",   "w",
+          "x",   "y",   "z",   "{",   "|",   "}",   "~", "DEL"};
+    
+    if(sizeof(displayCharTable) / sizeof(displayCharTable[0]) > cData)
+    {
+        sprintf(display, "%3s", displayCharTable[(int)cData]);
+    }
+}
+
 void setFormatData(p_toolsData_t tData, char *disp, int dp, int *cnt)
 {
     uint8_t *buffer = tData->buffer;
+    char charWk[4] = "---";
+    int type = tData->type;
 
-    switch(tData->type)
+    switch(type)
     {
         case dspType8:
             if(*cnt < tData->size)
             {
                 sprintf(&disp[dp], "%02"PRIx8" ", *((uint8_t *)&(buffer[*cnt])));
             }else{
-                sprintf(&disp[dp], ".. ");
+                sprintf(&disp[dp], "   ");
             }
             *cnt += sizeof(uint8_t);
             break;
@@ -142,7 +178,7 @@ void setFormatData(p_toolsData_t tData, char *disp, int dp, int *cnt)
             {
                 sprintf(&disp[dp], "%04"PRIx16" ", *((uint16_t *)&(buffer[*cnt])));
             }else{
-                sprintf(&disp[dp], ".... ");
+                sprintf(&disp[dp], "     ");
             }
             *cnt += sizeof(uint16_t);
             break;
@@ -152,7 +188,7 @@ void setFormatData(p_toolsData_t tData, char *disp, int dp, int *cnt)
             {
                 sprintf(&disp[dp], "%08"PRIx32" ", *((uint32_t *)&(buffer[*cnt])));
             }else{
-                sprintf(&disp[dp], "........ ");
+                sprintf(&disp[dp], "         ");
             }
             *cnt += sizeof(uint32_t);
             break;
@@ -162,9 +198,20 @@ void setFormatData(p_toolsData_t tData, char *disp, int dp, int *cnt)
             {
                 sprintf(&disp[dp], "%016"PRIx64" ", *((uint64_t *)&(buffer[*cnt])));
             }else{
-                sprintf(&disp[dp], "................ ");
+                sprintf(&disp[dp], "                 ");
             }
             *cnt += sizeof(uint64_t);
+            break;
+
+        case dspTypeChar:
+            if(*cnt < tData->size)
+            {
+                displayCharacter(charWk, *((uint8_t *)&(buffer[*cnt])));
+                sprintf(&disp[dp], "%s ", charWk);
+            }else{
+                sprintf(&disp[dp], "    ");
+            }
+            *cnt += sizeof(uint8_t);
             break;
 
         default:
@@ -321,12 +368,19 @@ void checkCommandOption(toolsData_t *tData, toolsApi_t *rc)
         case dspType64:
             checkCode = 8;
             break;
+        default:
+            break;
     }
 
     if(tData->width % checkCode != 0)
     {
         *rc = toolsIllegalArgumentError;
         fprintf(stdout, "There is illegal option parameter. (option w)\n");
+    }
+    /* check character flag */
+    if(tData->fChar == 1)
+    {
+        tData->type = dspTypeChar;
     }
 }
 
@@ -335,11 +389,17 @@ toolsApi_t argumentParsing(int argc, char **argv, toolsData_t *tData)
     int rc = toolsOK;
     int result;
 
-    while((result=getopt(argc, argv, "fht::w:d:")) != -1)
+    while((result=getopt(argc, argv, "cCfht::w:d:")) != -1)
     {
         switch(result)
         {
         /* If option of argument has the value, the value is stored to "optarg" */
+        case 'c':
+            tData->fChar = dspCharDetail;
+            break;
+        case 'C':
+            tData->fChar = dspCharEasy;
+            break;
         case 'd':   /* data word size */
             switch(strtol(optarg, NULL, 0))
             {

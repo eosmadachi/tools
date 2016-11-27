@@ -44,12 +44,21 @@ typedef enum toolsApi
     toolsOK = 0
 } toolsApi_t, *p_toolsApi_t;
 
+typedef enum toolsCharType
+{
+    dspChar = 0,
+    dspCharDetail,
+    dspCharEasy
+} toolsChar, *p_toolsChar;
+
+
 typedef enum toolsDataType
 {
     dspType8 = 0,
     dspType16,
     dspType32,
-    dspType64
+    dspType64,
+    dspTypeChar = 99
 } toolsDataType_t, *p_toolsDataType_t;
 
 typedef struct toolsData
@@ -58,6 +67,7 @@ typedef struct toolsData
     int             size;
     int             dataSize;
     int             lineSize;
+    toolsChar       fChar;
     toolsDataType_t type;
     int             width;
     int             title;
@@ -70,6 +80,7 @@ typedef struct toolsData
 #define OFFSET_FMT_16    " %02x  "              // _dd_ + sp
 #define OFFSET_FMT_32    "   %02x    "          // ___dd___ + sp
 #define OFFSET_FMT_64    "       %02x        "  // _______dd_______ + sp
+#define OFFSET_FMT_CHAR  "%03x "                // dd_ + sp
 
 #define OFFSET_ONLY_TOP     -1
 
