@@ -23,7 +23,7 @@
 
 #include "toolsDataDump.h"
 
-void createTitle(char *title, char *strFile, int tsize, int size, toolsDataType_t dataType, int width)
+void createTitle(char *title, char *strFile, int tsize, int size, toolsDataType dataType, int width)
 {
     char dataFmt[24] = {0};
     int i = 0, len = 0, inc = 0;
@@ -75,7 +75,7 @@ void createTitle(char *title, char *strFile, int tsize, int size, toolsDataType_
     memset(&title[len], '-', len - 1);
 }
 
-int calBufferSize(p_toolsData_t tData)
+int calBufferSize(p_toolsDataBlock tData)
 {
     int aSize = 0;
     int lineCnt = 0;
@@ -129,9 +129,9 @@ int calBufferSize(p_toolsData_t tData)
     return aSize;
 }
 
-void displayCharacter(char *display, char cData)
+void displayDetailCharacter(char *display, char cData)
 {
-    const char *displayCharTable[] = { 
+    static const char *displayDetailCharTable[] = { 
         "NUL", "SOH", "STX", "ETX", "EOT", "ENQ", "ACK", "BEL",
          "BS",  "HT",  "NL",  "VT",  "NP",  "CR",  "SO",  "SI",
         "DLE", "DC1", "DC2", "DC3", "DC4", "NAK", "SYN", "ETB",
@@ -149,13 +149,39 @@ void displayCharacter(char *display, char cData)
           "p",   "q",   "r",   "s",   "t",   "u",   "v",   "w",
           "x",   "y",   "z",   "{",   "|",   "}",   "~", "DEL"};
     
-    if(sizeof(displayCharTable) / sizeof(displayCharTable[0]) > cData)
+    if(sizeof(displayDetailCharTable)/sizeof(&displayDetailCharTable[0]) > cData)
     {
-        sprintf(display, "%3s", displayCharTable[(int)cData]);
+        sprintf(display, "%3s", displayDetailCharTable[(int)cData]);
     }
 }
 
-void setFormatData(p_toolsData_t tData, char *disp, int dp, int *cnt)
+void displayEasyCharacter(char *display, char cData)
+{
+    static const char *displayEasyCharTable[] = { 
+          " ",   " ",   " ",   " ",   " ",   " ",   " ",   " ",
+          " ",   " ",   " ",   " ",   " ",   " ",   " ",   " ",
+          " ",   " ",   " ",   " ",   " ",   " ",   " ",   " ",
+          " ",   " ",   " ",   " ",   " ",   " ",   " ",   " ",
+          " ",   "!",  "\"",   "#",   "$",   "%",   "&",  "\'",
+          "(",   ")",   "*",   "+",   ",",   "-",   ".",   "/",
+          "0",   "1",   "2",   "3",   "4",   "5",   "6",   "7",
+          "8",   "9",   ":",   ";",   "<",   "=",   ">",   "?",
+          "@",   "A",   "B",   "C",   "D",   "E",   "F",   "G",
+          "H",   "I",   "J",   "K",   "L",   "M",   "N",   "O",
+          "P",   "Q",   "R",   "S",   "T",   "U",   "V",   "W",
+          "X",   "Y",   "Z",   "[",  "\\",   "]",   "^",   "_",
+          "`",   "a",   "b",   "c",   "d",   "e",   "f",   "g",
+          "h",   "i",   "j",   "k",   "l",   "m",   "n",   "o",
+          "p",   "q",   "r",   "s",   "t",   "u",   "v",   "w",
+          "x",   "y",   "z",   "{",   "|",   "}",   "~",   " "};
+    
+    if(sizeof(displayEasyCharTable)/sizeof(&displayEasyCharTable[0]) > cData)
+    {
+        sprintf(display, "%s", displayEasyCharTable[(int)cData]);
+    }
+}
+
+void setFormatData(p_toolsDataBlock tData, char *disp, int dp, int *cnt)
 {
     uint8_t *buffer = tData->buffer;
     char charWk[4] = "---";
@@ -206,7 +232,7 @@ void setFormatData(p_toolsData_t tData, char *disp, int dp, int *cnt)
         case dspTypeChar:
             if(*cnt < tData->size)
             {
-                displayCharacter(charWk, *((uint8_t *)&(buffer[*cnt])));
+                displayDetailCharacter(charWk, *((uint8_t *)&(buffer[*cnt])));
                 sprintf(&disp[dp], "%s ", charWk);
             }else{
                 sprintf(&disp[dp], "    ");
@@ -220,7 +246,7 @@ void setFormatData(p_toolsData_t tData, char *disp, int dp, int *cnt)
     }
 }
 
-toolsApi_t dataDump(p_toolsData_t tData)
+toolsApi_t dataDump(p_toolsDataBlock tData)
 {
     static char fname[PATH_MAX] = "";
     toolsApi_t rc = toolsOK;
@@ -238,7 +264,7 @@ toolsApi_t dataDump(p_toolsData_t tData)
         rc = toolsIllegalParameterError;
     }
     /* insert file name */
-    if(tData->insertFName)
+    if(tData->fFName == dspFNameTrue)
     {
         sprintf(fname, "%s: ", tData->file);
     }
@@ -347,7 +373,7 @@ int getFileState(FILE *fp)
     return rc;
 }
 
-void checkCommandOption(toolsData_t *tData, toolsApi_t *rc)
+void checkCommandOption(toolsDataBlock *tData, toolsApi_t *rc)
 {
     int checkCode = 1;
     
@@ -371,20 +397,20 @@ void checkCommandOption(toolsData_t *tData, toolsApi_t *rc)
         default:
             break;
     }
-
     if(tData->width % checkCode != 0)
     {
         *rc = toolsIllegalArgumentError;
         fprintf(stdout, "There is illegal option parameter. (option w)\n");
     }
+
     /* check character flag */
-    if(tData->fChar == 1)
+    if(tData->tChar == dspCharDetail)
     {
         tData->type = dspTypeChar;
     }
 }
 
-toolsApi_t argumentParsing(int argc, char **argv, toolsData_t *tData)
+toolsApi_t argumentParsing(int argc, char **argv, toolsDataBlock *tData)
 {
     int rc = toolsOK;
     int result;
@@ -395,10 +421,10 @@ toolsApi_t argumentParsing(int argc, char **argv, toolsData_t *tData)
         {
         /* If option of argument has the value, the value is stored to "optarg" */
         case 'c':
-            tData->fChar = dspCharDetail;
+            tData->tChar = dspCharDetail;
             break;
         case 'C':
-            tData->fChar = dspCharEasy;
+            tData->tChar = dspCharEasy;
             break;
         case 'd':   /* data word size */
             switch(strtol(optarg, NULL, 0))
@@ -428,15 +454,17 @@ toolsApi_t argumentParsing(int argc, char **argv, toolsData_t *tData)
             }
             break;
         case 'f':
-            tData->insertFName = 1;
+            tData->fFName = dspFNameTrue;
             break;
         case 'h':
             fprintf(stdout, "Data Dump \n");
             fprintf(stdout, "usage: toolsDataDump [file] [-d data type] [-w line width ] [-t offset title] [-f display file name ] \n");
-            fprintf(stdout, "       -d data type (-s8:8bit -s16:16bit -s32:32bit -s64:64bit)\n");
+            fprintf(stdout, "       -d data type (-d8:8bit -d16:16bit -d32:32bit -d64:64bit)\n");
             fprintf(stdout, "       -w byte size for line width\n");
             fprintf(stdout, "       -t display offset (-t0:no display, -t1:display to every lines)\n");
             fprintf(stdout, "       -f display file name to top of every lines \n");
+            fprintf(stdout, "       -c display detail character\n");
+            fprintf(stdout, "       -C display an easy character\n");
             fprintf(stdout, "\n");
             rc = toolsNG;
             break;
@@ -465,7 +493,7 @@ toolsApi_t argumentParsing(int argc, char **argv, toolsData_t *tData)
     return rc; 
 }
 
-toolsApi_t getDataAndDump(p_toolsData_t tData)
+toolsApi_t getDataAndDump(p_toolsDataBlock tData)
 {
     char *fnp   = NULL;
     FILE *fp    = NULL;
@@ -512,13 +540,14 @@ toolsApi_t getDataAndDump(p_toolsData_t tData)
 
 int main(int argc, char *argv[])
 {
-    toolsData_t tData = {0};
+    toolsDataBlock tData = {0};
     char readline[PATH_MAX] = {0};
     int rc = 0;
 
     tData.width = 16;
     tData.title = -1;
-    tData.insertFName = 0;
+    tData.fFName = dspFNameFalse;
+    tData.tChar = dspCharNotUse;
     tData.type = dspType8;
     rc = argumentParsing(argc, argv, &tData);
     if(rc == toolsOK)
@@ -530,10 +559,7 @@ int main(int argc, char *argv[])
             while(fgets(tData.file, PATH_MAX, stdin) != NULL)
             {
                 rc = getDataAndDump(&tData);
-                if(rc != toolsOK)
-                {
-                    break;
-                }
+                if(rc != toolsOK)   { break; }
             }
         }else{
             /* for single file  */

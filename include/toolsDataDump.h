@@ -46,34 +46,47 @@ typedef enum toolsApi
 
 typedef enum toolsCharType
 {
-    dspChar = 0,
+    dspCharNotUse = 0,
     dspCharDetail,
     dspCharEasy
 } toolsChar, *p_toolsChar;
 
+typedef enum toolsCharFlagType
+{
+    dspCharFalse = 0,
+    dspCharTrue,
+} toolsCharFlag, *p_toolsCharFlag;
 
-typedef enum toolsDataType
+typedef enum toolsFNameFlagType
+{
+    dspFNameFalse = 0,
+    dspFNameTrue
+} toolsFNameFlag, *p_toolsFNameFlag;
+
+
+typedef enum toolsDataCodeType
 {
     dspType8 = 0,
     dspType16,
     dspType32,
     dspType64,
-    dspTypeChar = 99
-} toolsDataType_t, *p_toolsDataType_t;
+    dspTypeChar,
+} toolsDataType, *p_toolsDataType;
 
-typedef struct toolsData
+typedef struct toolsDataBlockType
 {
     uint8_t         *buffer;
     int             size;
     int             dataSize;
     int             lineSize;
-    toolsChar       fChar;
-    toolsDataType_t type;
+    toolsChar       tChar;
+    toolsCharFlag   fWithChar;
+    toolsFNameFlag  fFName;
+    toolsDataType   type;
     int             width;
     int             title;
     char            *file;
-    int             insertFName;
-} toolsData_t, *p_toolsData_t;
+} toolsDataBlock, *p_toolsDataBlock;
 
 /* definition */
 #define OFFSET_FMT_08    "%02x "                // dd + sp
@@ -83,9 +96,6 @@ typedef struct toolsData
 #define OFFSET_FMT_CHAR  "%03x "                // dd_ + sp
 
 #define OFFSET_ONLY_TOP     -1
-
-/* prototype */
-toolsApi_t binaryDump(p_toolsData_t tDate);
 
 
 #endif /* #ifndef __TOOLS_BINARY_DUMP_H__ */
