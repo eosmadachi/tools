@@ -1,0 +1,76 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	2	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.9~svn20110310	//
+argumentParsing	./toolsDataDump.c	417;"	function	signature:(int argc, char **argv, toolsDataBlock *tData)
+buffer	./include/toolsDataDump.h	78;"	member	struct:toolsDataBlockType
+calBufferSize	./toolsDataDump.c	78;"	function	signature:(p_toolsDataBlock tData)
+CC	./makefile	5;"	macro
+CFLAGS	./makefile	4;"	macro
+checkCommandOption	./toolsDataDump.c	380;"	function	signature:(toolsDataBlock *tData, toolsApi_t *rc)
+createTitle	./toolsDataDump.c	26;"	function	signature:(char *title, char *strFile, int tsize, int size, toolsDataType dataType, int width)
+dataDump	./toolsDataDump.c	249;"	function	signature:(p_toolsDataBlock tData)
+dataSize	./include/toolsDataDump.h	80;"	member	struct:toolsDataBlockType
+displayDetailCharacter	./toolsDataDump.c	132;"	function	signature:(char *display, char cData)
+displayEasyCharacter	./toolsDataDump.c	158;"	function	signature:(char *display, char cData)
+dspCharDetail	./include/toolsDataDump.h	50;"	enumerator	enum:toolsCharType
+dspCharEasy	./include/toolsDataDump.h	51;"	enumerator	enum:toolsCharType
+dspCharFalse	./include/toolsDataDump.h	56;"	enumerator	enum:toolsCharFlagType
+dspCharNotUse	./include/toolsDataDump.h	49;"	enumerator	enum:toolsCharType
+dspCharTrue	./include/toolsDataDump.h	57;"	enumerator	enum:toolsCharFlagType
+dspFNameFalse	./include/toolsDataDump.h	62;"	enumerator	enum:toolsFNameFlagType
+dspFNameTrue	./include/toolsDataDump.h	63;"	enumerator	enum:toolsFNameFlagType
+dspType16	./include/toolsDataDump.h	70;"	enumerator	enum:toolsDataCodeType
+dspType32	./include/toolsDataDump.h	71;"	enumerator	enum:toolsDataCodeType
+dspType64	./include/toolsDataDump.h	72;"	enumerator	enum:toolsDataCodeType
+dspType8	./include/toolsDataDump.h	69;"	enumerator	enum:toolsDataCodeType
+dspTypeChar	./include/toolsDataDump.h	73;"	enumerator	enum:toolsDataCodeType
+fFName	./include/toolsDataDump.h	84;"	member	struct:toolsDataBlockType
+file	./include/toolsDataDump.h	88;"	member	struct:toolsDataBlockType
+fWithChar	./include/toolsDataDump.h	83;"	member	struct:toolsDataBlockType
+getDataAndDump	./toolsDataDump.c	503;"	function	signature:(p_toolsDataBlock tData)
+getFileState	./toolsDataDump.c	352;"	function	signature:(FILE *fp)
+INC	./makefile	2;"	macro
+LFLAGS	./makefile	6;"	macro
+lineSize	./include/toolsDataDump.h	81;"	member	struct:toolsDataBlockType
+main	./toolsDataDump.c	548;"	function	signature:(int argc, char *argv[])
+OBJ	./makefile	7;"	macro
+OFFSET_FMT_08	./include/toolsDataDump.h	92;"	macro
+OFFSET_FMT_16	./include/toolsDataDump.h	93;"	macro
+OFFSET_FMT_32	./include/toolsDataDump.h	94;"	macro
+OFFSET_FMT_64	./include/toolsDataDump.h	95;"	macro
+OFFSET_FMT_CHAR	./include/toolsDataDump.h	96;"	macro
+OFFSET_ONLY_TOP	./include/toolsDataDump.h	98;"	macro
+PRG	./makefile	1;"	macro
+p_toolsApi_t	./include/toolsDataDump.h	45;"	typedef	typeref:enum:toolsApi
+p_toolsChar	./include/toolsDataDump.h	52;"	typedef	typeref:enum:toolsCharType
+p_toolsCharFlag	./include/toolsDataDump.h	58;"	typedef	typeref:enum:toolsCharFlagType
+p_toolsDataBlock	./include/toolsDataDump.h	89;"	typedef	typeref:struct:toolsDataBlockType
+p_toolsDataType	./include/toolsDataDump.h	74;"	typedef	typeref:enum:toolsDataCodeType
+p_toolsFNameFlag	./include/toolsDataDump.h	64;"	typedef	typeref:enum:toolsFNameFlagType
+setFormatData	./toolsDataDump.c	184;"	function	signature:(p_toolsDataBlock tData, char *disp, int dp, int *cnt)
+size	./include/toolsDataDump.h	79;"	member	struct:toolsDataBlockType
+tChar	./include/toolsDataDump.h	82;"	member	struct:toolsDataBlockType
+title	./include/toolsDataDump.h	87;"	member	struct:toolsDataBlockType
+toolsApi	./include/toolsDataDump.h	38;"	enum
+toolsApi_t	./include/toolsDataDump.h	45;"	typedef	typeref:enum:toolsApi
+toolsChar	./include/toolsDataDump.h	52;"	typedef	typeref:enum:toolsCharType
+toolsCharFlag	./include/toolsDataDump.h	58;"	typedef	typeref:enum:toolsCharFlagType
+toolsCharFlagType	./include/toolsDataDump.h	54;"	enum
+toolsCharType	./include/toolsDataDump.h	47;"	enum
+toolsDataBlock	./include/toolsDataDump.h	89;"	typedef	typeref:struct:toolsDataBlockType
+toolsDataBlockType	./include/toolsDataDump.h	76;"	struct
+toolsDataCodeType	./include/toolsDataDump.h	67;"	enum
+toolsDataType	./include/toolsDataDump.h	74;"	typedef	typeref:enum:toolsDataCodeType
+toolsFNameFlag	./include/toolsDataDump.h	64;"	typedef	typeref:enum:toolsFNameFlagType
+toolsFNameFlagType	./include/toolsDataDump.h	60;"	enum
+toolsGetResourceError	./include/toolsDataDump.h	40;"	enumerator	enum:toolsApi
+toolsIllegalArgumentError	./include/toolsDataDump.h	42;"	enumerator	enum:toolsApi
+toolsIllegalParameterError	./include/toolsDataDump.h	41;"	enumerator	enum:toolsApi
+toolsNG	./include/toolsDataDump.h	43;"	enumerator	enum:toolsApi
+toolsOK	./include/toolsDataDump.h	44;"	enumerator	enum:toolsApi
+type	./include/toolsDataDump.h	85;"	member	struct:toolsDataBlockType
+width	./include/toolsDataDump.h	86;"	member	struct:toolsDataBlockType
+__TOOLS_BINARY_DUMP_H__	./include/toolsDataDump.h	24;"	macro

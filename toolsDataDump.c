@@ -293,7 +293,9 @@ toolsApi_t dataDump(p_toolsDataBlock tData)
             cnt = 0;
             if(tData->title == OFFSET_ONLY_TOP)
             {
+                fprintf(stdout, "\x1b[33m");
                 fprintf(stdout, "%s\n", title);
+                fprintf(stdout, "\x1b[39m");
             }
 
             while(cnt < tData->dataSize)
@@ -306,8 +308,10 @@ toolsApi_t dataDump(p_toolsDataBlock tData)
                     {
                         if((lineCnt % tData->title == 0) && (cnt < tData->dataSize))
                         {
+                            fprintf(stdout, "\x1b[33m");
                             fprintf(stdout, "\n%s\n", title);
-                        } 
+                            fprintf(stdout, "\x1b[39m");
+                        }
                     }
 
                     /* add address */
@@ -328,7 +332,7 @@ toolsApi_t dataDump(p_toolsDataBlock tData)
                 {
                     /* add carriage return */
                     sprintf(&disp[dp], "\n");
-                    /* display line  */
+                    /* display line */
                     fprintf(stdout, "%s%s", fname, disp);
 
                     /* inclement line count */
@@ -457,8 +461,11 @@ toolsApi_t argumentParsing(int argc, char **argv, toolsDataBlock *tData)
             tData->fFName = dspFNameTrue;
             break;
         case 'h':
-            fprintf(stdout, "Data Dump \n");
+            fprintf(stdout, "\x1b[33m");
+            fprintf(stdout, "Data Dump (Binary Dump)\n");
+            fprintf(stdout, "\x1b[32m");
             fprintf(stdout, "usage: toolsDataDump [file] [-d data type] [-w line width ] [-t offset title] [-f display file name ] \n");
+            fprintf(stdout, "\x1b[39m");
             fprintf(stdout, "       -d data type (-d8:8bit -d16:16bit -d32:32bit -d64:64bit)\n");
             fprintf(stdout, "       -w byte size for line width\n");
             fprintf(stdout, "       -t display offset (-t0:no display, -t1:display to every lines)\n");
