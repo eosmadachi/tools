@@ -22,6 +22,8 @@
  */
 
 #include "toolsDataDump.h"
+#include <linux/limits.h>
+#include <bits/getopt_core.h>
 
 void createTitle(char *title, char *strFile, int tsize, int size, toolsDataType dataType, int width)
 {
